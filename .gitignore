@@ -1,0 +1,6 @@
+DataBases/
+Results/
+.ipynb_checkpoints/
+*.html
+*.docx
+*.Rhistory
