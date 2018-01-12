@@ -28,8 +28,7 @@ vcf-concat $inputnames | gzip -c > 1000Gtotal.vcf.gz
 
 #Convert the vcf file into a plink (bed, bim, fam) file
 plink --vcf 1000Gtotal.vcf.gz --make-bed --out 1000Gtotal
-#Update sex information
-plink --bfile 1000Gtotal --update-sex integrated_call_samples_v2.20130502.ALL.ped 3 --make-bed --out 1000Gtotal
+#Update fam information (DO THIS MANUALLY)
 
 #copy the final file to the hgdp folder
 files=$(ls 1000Gtotal.*)
