@@ -1,16 +1,16 @@
 #! /bin/bash
-#PBS -l nodes=1:ppn=2
+#PBS -l nodes=1:ppn=4
 #PBS -l walltime=25:00:00
 #PBS -A jlt22_b_g_sc_default
 
 #This script will download 1000Genomes files and select a set of SNP from a given file
 #Be sure to do this on the cluster
 
-#Download 1000Genomes
+#Download 1000Genomes (checks if newer files are in the ftp)
 cd ~/scratch
 mkdir -p 1000Genomes
 cd 1000Genomes/
-wget -r -l1 -nd -nH ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
+wget -c -N -r -l1 -nd -nH ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
 
 #Copying list of snps to 1000genomes directory
 cp ~/work/hgdp/snplist.txt .
@@ -35,10 +35,18 @@ cp $files ~/work/hgdp/
 cp integrated_call_samples_v3.20130502.ALL.panel ~/work/hgdp/
 cd ~/work/hgdp/
 
-#Generating a bed file from HGDP and keeping only autosomal chromosomes
-plink --file HGDP --autosome --make-bed --out HGDP
-#Merge the 1000Genomes data with your samples
+#Generating a bed file from HGDP and keeping only autosomal chromosomes and those in the 1000Genomes
+plink --file HGDP --autosome --extract 1000Gtotal.bim --make-bed --out HGDP
+#Initial merging of 1000Genomes data with HGDP
 plink --bfile HGDP --bmerge 1000Gtotal --make-bed --out Merge1000G_HGDP
 #If there are snps with flip strand
-plink --bfile 1000Gtotal --flip Merge1000G_HGDP-merge.missnp --make-bed --out Merge1000G_HGDP_flip
-plink --bfile HGDP --bmerge Merge1000G_HGDP_flip --make-bed --out Merge1000G_HGDP
+plink --bfile 1000Gtotal --flip Merge1000G_HGDP-merge.missnp --make-bed --out 1000G_flip
+#Second merging attempt
+plink --bfile HGDP --bmerge 1000G_flip --make-bed --out Merge1000G_HGDP
+#Exclude probably real multiallelic snps
+plink --bfile 1000G_flip --exclude Merge1000G_HGDP-merge.missnp --make-bed --out 1000G_flipclean
+plink --bfile HGDP --exclude Merge1000G_HGDP-merge.missnp --make-bed --out HGDPclean
+#Final merging, keeping the 1000G coordinates
+plink --bfile 1000G_flipclean --bmerge HGDPclean --make-bed --out Merge1000G_HGDP
+
+rm 1000G_flip.* 1000G_flipclean.* HGDPclean.*
